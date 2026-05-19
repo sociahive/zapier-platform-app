@@ -3,8 +3,8 @@
 Skeleton for the SociaHive Zapier Platform app. Built on Zapier Platform CLI
 v16 (Node 20+).
 
-**Status: scaffold only.** Submission to Zapier's app review is tracked in
-[`docs/MCP/index.md` § Phase 4](../../docs/MCP/index.md#phase-4--no-code-reach).
+**Status: scaffold only.** Submission to Zapier's app review is tracked
+internally in [`docs/internal/distribution-plan.md` § Phase 4](../../docs/internal/distribution-plan.md#phase-4--no-code-reach).
 
 ## What's here
 
@@ -35,8 +35,8 @@ zapier push                 # push as a private app to your Zapier account
 3. Swap auth from `custom` to `oauth2` — our `/api/oauth/authorize` already
    speaks OAuth 2.1 with PKCE; Zapier expects RFC 6749 §4.1 (no PKCE required
    on Zapier's side, but our server accepts both)
-4. Write the Zapier reviewer guide as a new section in `docs/MCP/index.md`
-   when we're ready to submit
+4. Write the Zapier reviewer guide as a new section in
+   `docs/internal/submission-packet.md` when we're ready to submit
 5. Submit via `zapier promote 1.0.0` and respond to review comments
 
 ## Notes for reviewers (when we submit)
