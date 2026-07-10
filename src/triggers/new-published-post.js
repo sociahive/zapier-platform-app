@@ -31,7 +31,7 @@ module.exports = {
   noun: 'Post',
 
   display: {
-    label: 'New published post',
+    label: 'New Published Post',
     description: 'Triggers when SociaHive finishes publishing a post.',
   },
 

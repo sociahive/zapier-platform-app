@@ -9,14 +9,6 @@
  * from real accounts in the Zap editor instead of typing IDs by hand.
  */
 
-const performListAccounts = async (z, bundle) => {
-  const response = await z.request({ url: 'https://www.sociahive.com/api/v1/connected-accounts' })
-  return (response.data?.data ?? []).map((a) => ({
-    id: a.id,
-    name: `${a.platform} — ${a.display_name ?? a.platform_username ?? a.platform_user_id}`,
-  }))
-}
-
 const perform = async (z, bundle) => {
   const account = bundle.inputData.account_id
   if (!account) throw new Error('Pick a connected account.')
@@ -58,7 +50,7 @@ module.exports = {
   noun: 'Post',
 
   display: {
-    label: 'Create post',
+    label: 'Create Post',
     description: 'Schedule or immediately publish a post to a connected account.',
   },
 
@@ -119,11 +111,5 @@ module.exports = {
       scheduled_at: '2026-06-01T09:00:00Z',
       created_at: '2026-05-25T12:00:00Z',
     },
-  },
-
-  // Helpers — registered above on the dropdown.
-  hidden: false,
-  resourceMethods: {
-    listAccounts: performListAccounts,
   },
 }
