@@ -2,7 +2,7 @@
   "name": "sociahive-zapier",
   "version": "0.1.0",
   "private": true,
-  "description": "SociaHive integration for Zapier — built on Zapier Platform CLI.",
+  "description": "SociaHive app for Zapier, built with the Zapier Platform CLI.",
   "main": "index.js",
   "scripts": {
     "test": "jest --testTimeout 10000",

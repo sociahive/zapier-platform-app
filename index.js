@@ -1,14 +1,22 @@
 /**
- * SociaHive — Zapier Platform CLI app.
+ * SociaHive app for the Zapier Platform CLI.
  *
  * Entry point. Wires up the authentication module, triggers, and actions.
- * Production submission steps are documented in ./README.md.
  */
 
 const authentication = require('./src/authentication')
 const triggers = require('./src/triggers')
 const creates = require('./src/creates')
-const searches = require('./src/searches')
+
+// The `code` field of an error body, or undefined when the body is not JSON.
+const readCode = (response) => {
+  try {
+    const body = response.data ?? JSON.parse(response.content || '{}')
+    return body && body.code
+  } catch {
+    return undefined
+  }
+}
 
 module.exports = {
   version: require('./package.json').version,
@@ -16,7 +24,7 @@ module.exports = {
 
   authentication,
 
-  // Inject the X-API-Key (or OAuth bearer) header on every outbound request.
+  // Send the API key (or an OAuth bearer) on every outbound request.
   beforeRequest: [
     (request, z, bundle) => {
       if (bundle.authData?.api_key) {
@@ -36,12 +44,17 @@ module.exports = {
         throw new z.errors.RefreshAuthError('SociaHive API key invalid or revoked')
       }
       if (response.status === 403) {
+        if (readCode(response) === 'upgrade_required') {
+          throw new Error(
+            'API access is part of the SociaHive trial and paid plans. See https://www.sociahive.com/pricing',
+          )
+        }
         throw new Error(
           'Your SociaHive key is missing a required scope. See https://www.sociahive.com/settings?tab=api-keys',
         )
       }
       if (response.status === 429) {
-        throw new Error('SociaHive rate limit exceeded — wait and retry')
+        throw new Error('SociaHive rate limit reached. Wait a minute and retry.')
       }
       return response
     },
@@ -49,17 +62,10 @@ module.exports = {
 
   triggers: {
     [triggers.newPublishedPost.key]: triggers.newPublishedPost,
+    [triggers.accountList.key]: triggers.accountList,
   },
 
   creates: {
     [creates.createPost.key]: creates.createPost,
-    [creates.generateAutopilotWeek.key]: creates.generateAutopilotWeek,
-    [creates.adjustAutopilotWeek.key]: creates.adjustAutopilotWeek,
-    [creates.approveAutopilotWeek.key]: creates.approveAutopilotWeek,
-    [creates.turnOnAutopilot.key]: creates.turnOnAutopilot,
-  },
-
-  searches: {
-    [searches.getAutopilotStatus.key]: searches.getAutopilotStatus,
   },
 }

@@ -1,13 +1,8 @@
 /**
  * Authentication module.
  *
- * Ships two auth methods today: a simple API-key flow (custom auth) and a
- * placeholder for OAuth 2.0. Zapier prefers OAuth for end-user trust, so the
- * goal is to graduate to that once we've round-tripped the redirect flow with
- * Zapier's editor.
- *
- * For now we use `custom` auth keyed on `api_key` — fastest path to a working
- * private app for QA before public submission.
+ * Custom auth keyed on a SociaHive API key, sent as `X-API-Key` (see the
+ * `beforeRequest` hook in index.js).
  */
 
 const test = (z) => z.request({
@@ -26,7 +21,8 @@ module.exports = {
       type: 'password',
       helpText:
         'Generate one at https://www.sociahive.com/settings?tab=api-keys. ' +
-        'Required scopes: posts:read, posts:write, accounts:read.',
+        'Give it these scopes: accounts:read (connection test and account list), ' +
+        'posts:read (New Published Post) and posts:write (Create Post).',
     },
   ],
 
