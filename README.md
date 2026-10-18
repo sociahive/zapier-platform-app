@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">Run your social media from your AI tool: schedule posts, build DM and comment automations, and read analytics.</p>
-<p align="center">This repo holds a small SociaHive app for Zapier.</p>
+<p align="center">The SociaHive app for Zapier.</p>
 
 <p align="center">
   <a href="https://www.sociahive.com">Website</a> ·
@@ -19,26 +19,42 @@
 
 # SociaHive for Zapier
 
-A [Zapier Platform CLI](https://github.com/zapier/zapier-platform) app that connects [SociaHive](https://www.sociahive.com) to Zapier with one trigger and one action. It is not listed in the Zapier app directory. A fuller app is being prepared for the directory.
+A [Zapier Platform CLI](https://github.com/zapier/zapier-platform) app that connects [SociaHive](https://www.sociahive.com) to Zapier.
+
+Status: not listed in the Zapier app directory yet.
 
 ## What the app does
 
 | Kind | Name | What it does |
 |---|---|---|
-| Trigger (polling) | New Published Post | Checks your 50 most recent published posts every few minutes and starts the Zap for each new one. You can limit it to one platform. |
-| Action | Create Post | Creates a post on one connected account: publish now, or schedule it with a date, time and timezone. Takes a caption and, optionally, one image by public URL. |
+| Trigger (instant) | Post Published | Starts the Zap when a scheduled post is published to one of your accounts. Optionally limited to one account. |
+| Trigger (instant) | Post Failed | Starts the Zap when a scheduled post fails to publish to one of your accounts. Optionally limited to one account. |
+| Trigger (instant) | Automation Started | Starts the Zap when one of your automations starts for someone, for example after a keyword comment or DM. Optionally limited to one account or automation. |
+| Trigger (instant) | Automation Error | Starts the Zap when one of your automations hits an error. Optionally limited to one account or automation. |
+| Action | Create Post | Publishes, schedules, or saves a draft post on one connected account, with text and optional image or video links. |
+| Action | Upload Media From URL | Copies an image or video from a public link into SociaHive, so a post can use it. |
+| Action | Turn on Automation | Turns on an automation, after the same checks as the Turn on button in SociaHive. |
+| Action | Turn Off Automation | Turns off an automation and keeps it as a draft. |
+| Search | Find Account | Finds one of your connected accounts by username or name, optionally on one platform. |
 
-The account field in Create Post lists your connected accounts.
+The instant triggers use REST hooks: turning a Zap on creates a webhook subscription in SociaHive, and turning it off deletes it.
 
-## Sign in
+## Requirements
 
-The app signs in with a SociaHive API key, sent as the `X-API-Key` header. Create one in SociaHive under **Settings > API keys** with these scopes:
+- A SociaHive account on the 7-day trial or a paid plan. API access is not part of the free plan; there the app says so and links to [pricing](https://www.sociahive.com/pricing).
+- A SociaHive API key, created under **Settings > API keys**, with these scopes:
 
-- `accounts:read`: the connection test and the account list
-- `posts:read`: New Published Post
-- `posts:write`: Create Post
+| Scope | Used by |
+|---|---|
+| `accounts:read` | The connection test, the account list, Find Account |
+| `posts:read` | Sample data for Post Published and Post Failed |
+| `posts:write` | Create Post |
+| `flows:read` | The automation list |
+| `flows:write` | Turn on Automation, Turn Off Automation |
+| `uploads:write` | Upload Media From URL |
+| `webhooks:write` | Turning instant triggers on and off |
 
-API access is part of the 7-day trial and every paid plan. On the free plan the API answers `403 upgrade_required`, and the app says so and links to [pricing](https://www.sociahive.com/pricing).
+- Each Zap with an instant trigger uses one webhook subscription. Zapier subscriptions do not count toward your plan's webhook limit, but an account can have at most 10 active webhook subscriptions of any kind while it adds a Zapier one.
 
 The API allows 120 reads and 30 writes a minute, and 1,000 requests a day across all of them. See [rate limits](https://docs.sociahive.com/rate-limits).
 
@@ -58,11 +74,12 @@ The API allows 120 reads and 30 writes a minute, and 1,000 requests a day across
 
 ## Data and permissions
 
-- The API key only reaches what its scopes allow. Revoke it any time in **Settings > API keys**.
+- An API key only reaches what its scopes allow (for example `posts:read`, `posts:write`, `flows:write`). Revoke a key any time in **Settings > API keys**.
 - Accounts connect through each platform's official login and APIs. SociaHive does not scrape and never asks for your account password (Bluesky uses an app password, Telegram a bot token).
 - Platform tokens are stored encrypted on SociaHive's servers and are never returned by the API.
+- The app keeps only the id of each webhook subscription it creates. Event deliveries go straight from SociaHive to your Zap.
 
-## Develop
+## Local development
 
 ```bash
 npm install
@@ -72,6 +89,9 @@ npx zapier validate
 
 ## Links
 
-- [SociaHive developer docs](https://www.sociahive.com/developers)
-- [API reference](https://docs.sociahive.com)
-- [n8n nodes](https://github.com/sociahive/n8n-nodes-sociahive) (coming soon, not on npm yet)
+- [Docs](https://docs.sociahive.com)
+- [SociaHive developer page](https://www.sociahive.com/developers)
+
+## License
+
+[MIT](LICENSE)

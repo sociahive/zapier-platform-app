@@ -1,49 +1,67 @@
 /**
- * Action: create a SociaHive post on one connected account.
+ * Action: Create a post on one connected account.
  *
- * Two modes:
- *  - schedule_type = "immediate": publishes right away
- *  - schedule_type = "scheduled": needs scheduled_at (timezone defaults to UTC)
- *
- * The account field is a dropdown fed by the hidden `accountList` trigger, so
- * users pick a real account instead of typing an id.
+ * Sends POST /api/v1/posts:
+ *   { content: { text, media? }, platforms: [{ platform, account_id }],
+ *     schedule_type, scheduled_at?, timezone }
+ * The platform comes from the chosen account. "Save as draft" sends
+ * schedule_type "scheduled" with no time, which the API stores as a draft.
  */
 
-const perform = async (z, bundle) => {
-  const account = bundle.inputData.account_id
-  if (!account) throw new Error('Pick a connected account.')
+const { API_BASE, findAccount } = require('../lib/api')
 
-  // Dropdown values look like "instagram:507f...": split out platform and id.
-  const [platform, accountId] = String(account).includes(':')
-    ? String(account).split(':')
-    : [bundle.inputData.platform, account]
+const VIDEO_EXTENSIONS = /\.(mp4|mov|m4v|webm)(\?|#|$)/i
 
-  const content = { text: bundle.inputData.text }
-  if (bundle.inputData.image_url) {
-    content.media = [{ type: 'image', url: bundle.inputData.image_url }]
+const mediaItems = (urls, mediaType) =>
+  (urls || [])
+    .map((u) => String(u).trim())
+    .filter(Boolean)
+    .map((url) => ({
+      type: mediaType === 'video' || (mediaType !== 'image' && VIDEO_EXTENSIONS.test(url)) ? 'video' : 'image',
+      url,
+    }))
+
+const toUtcIso = (z, value) => {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    throw new z.errors.Error(`"${value}" is not a date and time.`, 'InvalidDate', 400)
   }
+  return date.toISOString()
+}
+
+const perform = async (z, bundle) => {
+  const input = bundle.inputData
+  const account = await findAccount(z, input.account_id)
+  const mode = input.when || 'now'
 
   const body = {
-    content,
-    platforms: [{ platform, account_id: accountId }],
-    schedule_type: bundle.inputData.schedule_type || 'immediate',
-    timezone: bundle.inputData.timezone || 'UTC',
+    content: { text: input.text || '' },
+    platforms: [{ platform: account.platform, account_id: account.id }],
+    schedule_type: mode === 'now' ? 'immediate' : 'scheduled',
+    timezone: input.timezone || 'UTC',
   }
 
-  if (body.schedule_type === 'scheduled') {
-    if (!bundle.inputData.scheduled_at) {
-      throw new Error('scheduled_at is required when schedule_type is "scheduled"')
+  const media = mediaItems(input.media_urls, input.media_type)
+  if (media.length > 0) body.content.media = media
+
+  if (mode === 'schedule') {
+    if (!input.scheduled_at) {
+      throw new z.errors.Error('Set "Publish At" to schedule the post.', 'MissingScheduledAt', 400)
     }
-    body.scheduled_at = bundle.inputData.scheduled_at
+    body.scheduled_at = toUtcIso(z, input.scheduled_at)
   }
 
-  const response = await z.request({
-    url: 'https://www.sociahive.com/api/v1/posts',
-    method: 'POST',
-    body,
-  })
-
-  return response.data?.data ?? response.data
+  const response = await z.request({ url: `${API_BASE}/posts`, method: 'POST', body })
+  const post = (response.data && response.data.data) || {}
+  return {
+    id: post.id,
+    status: post.status,
+    text: post.content ? post.content.text : body.content.text,
+    platform: account.platform,
+    account_id: account.id,
+    scheduled_at: post.scheduled_at || null,
+    created_at: post.created_at || null,
+  }
 }
 
 module.exports = {
@@ -52,7 +70,7 @@ module.exports = {
 
   display: {
     label: 'Create Post',
-    description: 'Publishes a post now or schedules it on a connected account.',
+    description: 'Publishes, schedules, or saves a draft post on one of your connected accounts.',
   },
 
   operation: {
@@ -61,54 +79,74 @@ module.exports = {
         key: 'account_id',
         label: 'Account',
         required: true,
-        dynamic: 'accountList.id.name',
+        dynamic: 'accountList.id.label',
+        helpText: 'The connected account to post to. The platform comes from the account.',
       },
       {
         key: 'text',
-        label: 'Caption or text',
+        label: 'Text',
         required: true,
         type: 'text',
+        helpText: 'The caption or post text. Each platform has its own length limit (X 280, Instagram 2,200).',
       },
       {
-        key: 'image_url',
-        label: 'Image URL',
+        key: 'media_urls',
+        label: 'Media URLs',
         required: false,
+        list: true,
         helpText:
-          'Optional. A public https link to one image. The platform fetches it when the post publishes, ' +
-          'so the link has to stay reachable. Each platform sets its own file limits (Instagram takes JPEG images).',
+          'Optional. Public links to images or videos (JPEG, PNG, WebP, MP4, MOV). Use "Upload Media From URL" first if the link may expire. Instagram needs at least one image or video.',
       },
       {
-        key: 'schedule_type',
-        label: 'Schedule',
+        key: 'media_type',
+        label: 'Media Type',
         required: false,
-        choices: { immediate: 'Publish now', scheduled: 'Schedule for later' },
-        default: 'immediate',
+        choices: { auto: 'Detect from the link', image: 'Image', video: 'Video' },
+        default: 'auto',
+      },
+      {
+        key: 'when',
+        label: 'When',
+        required: true,
+        choices: { now: 'Publish now', schedule: 'Schedule', draft: 'Save as draft' },
+        default: 'now',
       },
       {
         key: 'scheduled_at',
-        label: 'Scheduled at',
+        label: 'Publish At',
         required: false,
         type: 'datetime',
-        helpText: 'Required when Schedule is "Schedule for later".',
+        helpText: 'Required when "When" is "Schedule". Must be in the future.',
       },
       {
         key: 'timezone',
-        label: 'Timezone',
+        label: 'Time Zone',
         required: false,
         default: 'UTC',
-        helpText: 'An IANA timezone such as Europe/London. Defaults to UTC.',
+        helpText: 'IANA time zone stored with the post, for example "Europe/London".',
       },
     ],
 
     perform,
 
     sample: {
-      id: '507f1f77bcf86cd799439011',
-      content: { text: 'Hello from Zapier!' },
+      id: '66f1c0a8e4b0a1b2c3d4e5f6',
       status: 'scheduled',
-      platforms: [{ platform: 'instagram', account_id: '507f1f77bcf86cd799439012' }],
-      scheduled_at: '2027-03-01T09:00:00Z',
-      created_at: '2027-02-25T12:00:00Z',
+      text: 'New drop on Friday.',
+      platform: 'instagram',
+      account_id: '66f1c0a8e4b0a1b2c3d4e5f7',
+      scheduled_at: '2026-10-03T09:00:00.000Z',
+      created_at: '2026-10-01T12:00:00.000Z',
     },
+
+    outputFields: [
+      { key: 'id', label: 'Post ID' },
+      { key: 'status', label: 'Status' },
+      { key: 'text', label: 'Text' },
+      { key: 'platform', label: 'Platform' },
+      { key: 'account_id', label: 'Account ID' },
+      { key: 'scheduled_at', label: 'Scheduled At', type: 'datetime' },
+      { key: 'created_at', label: 'Created At', type: 'datetime' },
+    ],
   },
 }

@@ -1,6 +1,7 @@
 node_modules/
-package-lock.json
-.zapierapprc
 build/
+*.zip
 *.log
+.env
+.zapierapprc
 .DS_Store
