@@ -7,7 +7,8 @@
   </a>
 </p>
 
-<p align="center">The SociaHive app for Zapier: start Zaps from your posts and automations.</p>
+<p align="center">Run your social media from your AI tool: schedule posts, build DM and comment automations, and read analytics.</p>
+<p align="center">This repo holds a small SociaHive app for Zapier.</p>
 
 <p align="center">
   <a href="https://www.sociahive.com">Website</a> ·
@@ -18,32 +19,30 @@
 
 # SociaHive for Zapier
 
-Connect [SociaHive](https://www.sociahive.com) to thousands of apps on [Zapier](https://zapier.com): start a Zap when a post goes live or an automation collects a lead, and create posts or switch automations on and off from other apps.
-
-The app is not listed in the Zapier app directory yet.
+A [Zapier Platform CLI](https://github.com/zapier/zapier-platform) app that connects [SociaHive](https://www.sociahive.com) to Zapier with one trigger and one action. It is not listed in the Zapier app directory. A fuller app is being prepared for the directory.
 
 ## What the app does
 
-Sign in with a SociaHive API key. API access is part of the 7-day trial and every paid plan; on the free plan every call answers `403 upgrade_required`.
-
 | Kind | Name | What it does |
 |---|---|---|
-| Trigger (instant) | Post Published | A scheduled post went live. |
-| Trigger (instant) | Post Failed | A scheduled post failed to publish. |
-| Trigger (instant) | Automation Started | An automation started for someone. |
-| Trigger (instant) | Automation Error | An automation hit an error. |
-| Trigger (instant) | New Lead Collected | A flow collected a value (email, phone, answer). Needs lead webhooks enabled on your SociaHive account. |
-| Action | Create Post | Creates a post on a connected account: save as draft, publish now or schedule, with media by URL. |
-| Action | Upload Media From URL | Copies an image or video from a public URL into SociaHive. |
-| Action | Turn on Automation | Turns an automation on. |
-| Action | Turn Off Automation | Turns an automation off (back to draft). |
-| Search | Find Account | Finds one of your connected accounts. |
+| Trigger (polling) | New Published Post | Checks your 50 most recent published posts every few minutes and starts the Zap for each new one. You can limit it to one platform. |
+| Action | Create Post | Creates a post on one connected account: publish now, or schedule it with a date, time and timezone. Takes a caption and, optionally, one image by public URL. |
 
-Triggers are instant: turning a Zap on creates a SociaHive webhook for that event, and turning it off removes it. Zapier webhooks don't count toward your plan's webhook limit.
+The account field in Create Post lists your connected accounts.
 
-## Platforms
+## Sign in
 
-### Publish to
+The app signs in with a SociaHive API key, sent as the `X-API-Key` header. Create one in SociaHive under **Settings > API keys** with these scopes:
+
+- `accounts:read`: the connection test and the account list
+- `posts:read`: New Published Post
+- `posts:write`: Create Post
+
+API access is part of the 7-day trial and every paid plan. On the free plan the API answers `403 upgrade_required`, and the app says so and links to [pricing](https://www.sociahive.com/pricing).
+
+The API allows 120 reads and 30 writes a minute, and 1,000 requests a day across all of them. See [rate limits](https://docs.sociahive.com/rate-limits).
+
+## Platforms you can post to
 
 <p align="center">
   <a href="https://www.sociahive.com/features/content-scheduler"><img src="https://raw.githubusercontent.com/sociahive/.github/main/assets/platforms/instagram.svg" alt="Instagram" title="Instagram" width="24"></a>&nbsp;&nbsp;
@@ -57,25 +56,22 @@ Triggers are instant: turning a Zap on creates a SociaHive webhook for that even
   <a href="https://www.sociahive.com/features/content-scheduler"><img src="https://raw.githubusercontent.com/sociahive/.github/main/assets/platforms/pinterest.svg" alt="Pinterest" title="Pinterest" width="24"></a>
 </p>
 
-### Automate DMs and comments on
-
-<p align="center">
-  <a href="https://www.sociahive.com/automation/instagram"><img src="https://raw.githubusercontent.com/sociahive/.github/main/assets/platforms/instagram.svg" alt="Instagram" title="Instagram" width="24"></a>&nbsp;&nbsp;
-  <a href="https://www.sociahive.com/automation/facebook"><img src="https://raw.githubusercontent.com/sociahive/.github/main/assets/platforms/facebook.svg" alt="Facebook" title="Facebook" width="24"></a>&nbsp;&nbsp;
-  <a href="https://www.sociahive.com/features/messenger"><img src="https://raw.githubusercontent.com/sociahive/.github/main/assets/platforms/messenger.svg" alt="Messenger" title="Messenger" width="24"></a>&nbsp;&nbsp;
-  <a href="https://www.sociahive.com/automation/whatsapp"><img src="https://raw.githubusercontent.com/sociahive/.github/main/assets/platforms/whatsapp.svg" alt="WhatsApp" title="WhatsApp" width="24"></a>&nbsp;&nbsp;
-  <a href="https://www.sociahive.com/automation/telegram"><img src="https://raw.githubusercontent.com/sociahive/.github/main/assets/platforms/telegram.svg" alt="Telegram" title="Telegram" width="24"></a>
-</p>
-
 ## Data and permissions
 
+- The API key only reaches what its scopes allow. Revoke it any time in **Settings > API keys**.
 - Accounts connect through each platform's official login and APIs. SociaHive does not scrape and never asks for your account password (Bluesky uses an app password, Telegram a bot token).
-- Platform tokens are stored encrypted on SociaHive's servers. They are never sent to your AI tool and never returned by the API.
-- Access is limited to the scopes you grant: API key scopes (for example `posts:read`, `posts:write`, `flows:write`) or the permissions you approve at OAuth sign-in, where you can choose read-only access.
-- You can revoke access at any time: revoke a key in **Settings > API keys**, or disconnect an AI tool in **Settings > Connected apps**.
+- Platform tokens are stored encrypted on SociaHive's servers and are never returned by the API.
+
+## Develop
+
+```bash
+npm install
+npm test
+npx zapier validate
+```
 
 ## Links
 
 - [SociaHive developer docs](https://www.sociahive.com/developers)
-- [SociaHive webhooks](https://www.sociahive.com/docs/webhooks)
-- [n8n nodes](https://github.com/sociahive/n8n-nodes-sociahive)
+- [API reference](https://docs.sociahive.com)
+- [n8n nodes](https://github.com/sociahive/n8n-nodes-sociahive) (coming soon, not on npm yet)

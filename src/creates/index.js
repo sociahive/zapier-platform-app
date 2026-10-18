@@ -1,5 +1,5 @@
 /**
- * Creates — actions a Zap performs.
+ * Creates: actions a Zap performs.
  */
 
 module.exports = {

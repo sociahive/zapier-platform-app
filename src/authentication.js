@@ -21,7 +21,8 @@ module.exports = {
       type: 'password',
       helpText:
         'Generate one at https://www.sociahive.com/settings?tab=api-keys. ' +
-        'Required scopes: posts:read, posts:write, accounts:read.',
+        'Give it these scopes: accounts:read (connection test and account list), ' +
+        'posts:read (New Published Post) and posts:write (Create Post).',
     },
   ],
 

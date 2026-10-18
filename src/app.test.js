@@ -22,7 +22,7 @@ const fakeZ = (responseData) => ({
 
 describe('app definition', () => {
   it('registers the post trigger and the create post action', () => {
-    expect(Object.keys(App.triggers)).toEqual(['newPublishedPost'])
+    expect(Object.keys(App.triggers)).toEqual(['newPublishedPost', 'accountList'])
     expect(Object.keys(App.creates)).toEqual(['createPost'])
   })
 
@@ -30,6 +30,19 @@ describe('app definition', () => {
     const [inject] = App.beforeRequest
     const request = inject({ headers: {} }, {}, { authData: { api_key: 'sk_test_key' } })
     expect(request.headers['X-API-Key']).toBe('sk_test_key')
+  })
+
+  const [handle] = App.afterResponse
+  const z = { errors: { RefreshAuthError: class extends Error {} } }
+
+  it('explains a plan without API access on 403 upgrade_required', () => {
+    const response = { status: 403, data: { code: 'upgrade_required', upgrade_required: true } }
+    expect(() => handle(response, z, {})).toThrow('https://www.sociahive.com/pricing')
+  })
+
+  it('explains a missing scope on any other 403', () => {
+    const response = { status: 403, content: '{"error":"Insufficient scope"}' }
+    expect(() => handle(response, z, {})).toThrow('missing a required scope')
   })
 })
 
@@ -43,9 +56,10 @@ describe('Create Post', () => {
     expect(lastRequest.method).toBe('POST')
     expect(lastRequest.url).toBe('https://www.sociahive.com/api/v1/posts')
     expect(lastRequest.body).toEqual({
-      text: 'Hello',
+      content: { text: 'Hello' },
       platforms: [{ platform: 'instagram', account_id: 'acc1' }],
       schedule_type: 'immediate',
+      timezone: 'UTC',
     })
   })
 
@@ -63,24 +77,39 @@ describe('Create Post', () => {
         account_id: 'instagram:acc1',
         text: 'Later',
         schedule_type: 'scheduled',
-        scheduled_at: '2026-06-01T09:00:00Z',
+        scheduled_at: '2027-03-01T09:00:00Z',
         image_url: 'https://example.com/a.jpg',
       },
     })
-    expect(lastRequest.body.scheduled_at).toBe('2026-06-01T09:00:00Z')
+    expect(lastRequest.body.scheduled_at).toBe('2027-03-01T09:00:00Z')
     expect(lastRequest.body.timezone).toBe('UTC')
-    expect(lastRequest.body.media).toEqual([{ type: 'image', url: 'https://example.com/a.jpg' }])
+    expect(lastRequest.body.content.media).toEqual([{ type: 'image', url: 'https://example.com/a.jpg' }])
   })
 })
 
 describe('New Published Post', () => {
   const trigger = App.triggers.newPublishedPost
 
-  it('lists published posts, filtered by platform when set', async () => {
-    const posts = await trigger.operation.perform(fakeZ({ data: [{ id: 'p1' }] }), {
+  it('lists published posts and filters by platform when set', async () => {
+    const data = [
+      { id: 'p1', platforms: [{ platform: 'instagram' }] },
+      { id: 'p2', platforms: [{ platform: 'linkedin' }] },
+    ]
+    const posts = await trigger.operation.perform(fakeZ({ data }), {
       inputData: { platform: 'instagram' },
     })
-    expect(lastRequest.params).toEqual({ status: 'published', limit: 50, platform: 'instagram' })
-    expect(posts).toEqual([{ id: 'p1' }])
+    expect(lastRequest.params).toEqual({ status: 'published', limit: 50 })
+    expect(posts.map((p) => p.id)).toEqual(['p1'])
+  })
+})
+
+describe('Connected Account list', () => {
+  it('turns accounts into platform:id choices', async () => {
+    const accounts = await App.triggers.accountList.operation.perform(
+      fakeZ({ data: [{ id: 'a1', platform: 'instagram', username: 'shop' }] }),
+      { inputData: {} },
+    )
+    expect(lastRequest.url).toBe('https://www.sociahive.com/api/v1/connected-accounts')
+    expect(accounts).toEqual([{ id: 'instagram:a1', name: 'shop (instagram)' }])
   })
 })

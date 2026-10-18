@@ -1,27 +1,33 @@
 /**
- * Action: Create a SociaHive post.
+ * Action: create a SociaHive post on one connected account.
  *
  * Two modes:
- *  - schedule_type = "immediate" → publishes right away
- *  - schedule_type = "scheduled" → requires scheduled_at + timezone
+ *  - schedule_type = "immediate": publishes right away
+ *  - schedule_type = "scheduled": needs scheduled_at (timezone defaults to UTC)
  *
- * The action fetches connected accounts as a dynamic dropdown so users pick
- * from real accounts in the Zap editor instead of typing IDs by hand.
+ * The account field is a dropdown fed by the hidden `accountList` trigger, so
+ * users pick a real account instead of typing an id.
  */
 
 const perform = async (z, bundle) => {
   const account = bundle.inputData.account_id
   if (!account) throw new Error('Pick a connected account.')
 
-  // Account dropdown values look like "instagram:507f..." — split out platform + id.
+  // Dropdown values look like "instagram:507f...": split out platform and id.
   const [platform, accountId] = String(account).includes(':')
     ? String(account).split(':')
     : [bundle.inputData.platform, account]
 
+  const content = { text: bundle.inputData.text }
+  if (bundle.inputData.image_url) {
+    content.media = [{ type: 'image', url: bundle.inputData.image_url }]
+  }
+
   const body = {
-    text: bundle.inputData.text,
+    content,
     platforms: [{ platform, account_id: accountId }],
     schedule_type: bundle.inputData.schedule_type || 'immediate',
+    timezone: bundle.inputData.timezone || 'UTC',
   }
 
   if (body.schedule_type === 'scheduled') {
@@ -29,11 +35,6 @@ const perform = async (z, bundle) => {
       throw new Error('scheduled_at is required when schedule_type is "scheduled"')
     }
     body.scheduled_at = bundle.inputData.scheduled_at
-    body.timezone = bundle.inputData.timezone || 'UTC'
-  }
-
-  if (bundle.inputData.image_url) {
-    body.media = [{ type: 'image', url: bundle.inputData.image_url }]
   }
 
   const response = await z.request({
@@ -42,7 +43,7 @@ const perform = async (z, bundle) => {
     body,
   })
 
-  return response.data
+  return response.data?.data ?? response.data
 }
 
 module.exports = {
@@ -51,7 +52,7 @@ module.exports = {
 
   display: {
     label: 'Create Post',
-    description: 'Schedule or immediately publish a post to a connected account.',
+    description: 'Publishes a post now or schedules it on a connected account.',
   },
 
   operation: {
@@ -60,12 +61,11 @@ module.exports = {
         key: 'account_id',
         label: 'Account',
         required: true,
-        dynamic: 'newPublishedPost.id.text',
-        altersDynamicFields: true,
+        dynamic: 'accountList.id.name',
       },
       {
         key: 'text',
-        label: 'Caption / text',
+        label: 'Caption or text',
         required: true,
         type: 'text',
       },
@@ -73,7 +73,9 @@ module.exports = {
         key: 'image_url',
         label: 'Image URL',
         required: false,
-        helpText: 'Optional. JPEG or PNG only; max 8 MB.',
+        helpText:
+          'Optional. A public https link to one image. The platform fetches it when the post publishes, ' +
+          'so the link has to stay reachable. Each platform sets its own file limits (Instagram takes JPEG images).',
       },
       {
         key: 'schedule_type',
@@ -81,20 +83,20 @@ module.exports = {
         required: false,
         choices: { immediate: 'Publish now', scheduled: 'Schedule for later' },
         default: 'immediate',
-        altersDynamicFields: true,
       },
       {
         key: 'scheduled_at',
-        label: 'Scheduled at (ISO 8601)',
+        label: 'Scheduled at',
         required: false,
         type: 'datetime',
-        helpText: 'Required when Schedule = "Scheduled for later".',
+        helpText: 'Required when Schedule is "Schedule for later".',
       },
       {
         key: 'timezone',
         label: 'Timezone',
         required: false,
         default: 'UTC',
+        helpText: 'An IANA timezone such as Europe/London. Defaults to UTC.',
       },
     ],
 
@@ -102,11 +104,11 @@ module.exports = {
 
     sample: {
       id: '507f1f77bcf86cd799439011',
-      text: 'Hello from Zapier!',
+      content: { text: 'Hello from Zapier!' },
       status: 'scheduled',
       platforms: [{ platform: 'instagram', account_id: '507f1f77bcf86cd799439012' }],
-      scheduled_at: '2026-06-01T09:00:00Z',
-      created_at: '2026-05-25T12:00:00Z',
+      scheduled_at: '2027-03-01T09:00:00Z',
+      created_at: '2027-02-25T12:00:00Z',
     },
   },
 }
