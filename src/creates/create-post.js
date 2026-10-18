@@ -61,9 +61,6 @@ module.exports = {
         label: 'Account',
         required: true,
         dynamic: 'newPublishedPost.id.text',
-        // The above `dynamic` ref is a placeholder. In production we expose a
-        // real `accounts.list` trigger and reference it here. For now we list
-        // accounts via the helper below.
         altersDynamicFields: true,
       },
       {

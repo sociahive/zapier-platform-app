@@ -20,7 +20,7 @@
 
 Connect [SociaHive](https://www.sociahive.com) to thousands of apps on [Zapier](https://zapier.com): start a Zap when a post goes live or an automation collects a lead, and create posts or switch automations on and off from other apps.
 
-**Status:** submitting to the Zapier app directory. The app is not listed on Zapier yet.
+The app is not listed in the Zapier app directory yet.
 
 ## What the app does
 

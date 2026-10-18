@@ -2,13 +2,11 @@
  * SociaHive — Zapier Platform CLI app.
  *
  * Entry point. Wires up the authentication module, triggers, and actions.
- * Production submission steps are documented in ./README.md.
  */
 
 const authentication = require('./src/authentication')
 const triggers = require('./src/triggers')
 const creates = require('./src/creates')
-const searches = require('./src/searches')
 
 module.exports = {
   version: require('./package.json').version,
@@ -53,13 +51,5 @@ module.exports = {
 
   creates: {
     [creates.createPost.key]: creates.createPost,
-    [creates.generateAutopilotWeek.key]: creates.generateAutopilotWeek,
-    [creates.adjustAutopilotWeek.key]: creates.adjustAutopilotWeek,
-    [creates.approveAutopilotWeek.key]: creates.approveAutopilotWeek,
-    [creates.turnOnAutopilot.key]: creates.turnOnAutopilot,
-  },
-
-  searches: {
-    [searches.getAutopilotStatus.key]: searches.getAutopilotStatus,
   },
 }

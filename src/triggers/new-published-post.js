@@ -3,9 +3,6 @@
  *
  * Polling-based: Zapier hits this endpoint every few minutes and dedupes by
  * post id. We sort newest-first server-side so Zapier sees the latest first.
- *
- * Webhook variant (preferred long-term) requires us to expose subscribe/
- * unsubscribe endpoints — tracked in distribution-plan.md Phase 4.
  */
 
 const performList = async (z, bundle) => {
