@@ -1,13 +1,14 @@
 /**
- * Authentication module.
+ * Authentication: a SociaHive API key, sent as X-API-Key on every request
+ * (see beforeRequest in index.js).
  *
- * Custom auth keyed on a SociaHive API key, sent as `X-API-Key` (see the
- * `beforeRequest` hook in index.js).
+ * The test call lists connected accounts, which checks the key and its
+ * accounts:read scope. API access is part of the trial and paid plans.
  */
 
-const test = (z) => z.request({
-  url: 'https://www.sociahive.com/api/v1/connected-accounts',
-})
+const { API_BASE, accountName } = require('./lib/api')
+
+const test = (z) => z.request({ url: `${API_BASE}/connected-accounts` })
 
 module.exports = {
   type: 'custom',
@@ -16,15 +17,19 @@ module.exports = {
   fields: [
     {
       key: 'api_key',
-      label: 'SociaHive API key',
+      label: 'API Key',
       required: true,
       type: 'password',
       helpText:
-        'Generate one at https://www.sociahive.com/settings?tab=api-keys. ' +
-        'Give it these scopes: accounts:read (connection test and account list), ' +
-        'posts:read (New Published Post) and posts:write (Create Post).',
+        'Create one in SociaHive under [Settings → API keys](https://www.sociahive.com/settings?tab=api-keys). ' +
+        'Give it these scopes: accounts:read, posts:read, posts:write, flows:read, flows:write, uploads:write, webhooks:write. ' +
+        'API access needs the SociaHive trial or a paid plan.',
     },
   ],
 
-  connectionLabel: (z, bundle) => bundle.inputData?.accountLabel ?? 'SociaHive',
+  // The test call's response: name the connection after the first account.
+  connectionLabel: (z, bundle) => {
+    const accounts = (bundle.inputData && bundle.inputData.data) || []
+    return accounts.length > 0 ? accountName(accounts[0]) : ''
+  },
 }

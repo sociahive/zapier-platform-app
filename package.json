@@ -1,8 +1,14 @@
 {
   "name": "sociahive-zapier",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
-  "description": "SociaHive app for Zapier, built with the Zapier Platform CLI.",
+  "description": "The SociaHive app for Zapier: schedule posts, upload media, turn automations on or off, and start Zaps from new posts and automation events.",
+  "homepage": "https://www.sociahive.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sociahive/zapier-platform-app.git"
+  },
+  "license": "MIT",
   "main": "index.js",
   "scripts": {
     "test": "jest --testTimeout 10000",
@@ -18,9 +24,10 @@
   },
   "devDependencies": {
     "jest": "^29.7.0",
-    "zapier-platform-cli": "^16.0.0"
+    "nock": "^13.5.0",
+    "zapier-platform-cli": "16.5.1"
   },
   "zapier": {
-    "convertedByCLIVersion": "16.0.0"
+    "convertedByCLIVersion": "16.5.1"
   }
 }
