@@ -67,27 +67,6 @@ Triggers are instant: turning a Zap on creates a SociaHive webhook for that even
   <a href="https://www.sociahive.com/automation/telegram"><img src="https://raw.githubusercontent.com/sociahive/.github/main/assets/platforms/telegram.svg" alt="Telegram" title="Telegram" width="24"></a>
 </p>
 
-## About this repository
-
-The app is now developed and tested in the SociaHive codebase, and this repository will be updated when it is published. What is here today is the earlier scaffold:
-
-- `index.js`: app entry, request and response middleware (API key header, 401 to re-auth, 429 to a friendly error)
-- `src/authentication.js`: API key auth
-- `src/triggers/new-published-post.js`: a polling trigger for published posts
-- `src/creates/create-post.js`: create or schedule a post
-- `src/creates/` and `src/searches/`: Autopilot operations (generate, adjust and approve a week, turn Autopilot on, get its status)
-
-### Local dev
-
-Needs Node 20 or later and the Zapier Platform CLI.
-
-```bash
-npm install
-npx zapier login
-npx zapier validate
-npm test
-```
-
 ## Data and permissions
 
 - Accounts connect through each platform's official login and APIs. SociaHive does not scrape and never asks for your account password (Bluesky uses an app password, Telegram a bot token).
