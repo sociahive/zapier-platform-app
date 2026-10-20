@@ -18,6 +18,18 @@ const PLATFORM_LABELS = {
   youtube: 'YouTube',
   bluesky: 'Bluesky',
   pinterest: 'Pinterest',
+  discord: 'Discord',
+  slack: 'Slack',
+  mastodon: 'Mastodon',
+  lemmy: 'Lemmy',
+  tumblr: 'Tumblr',
+  devto: 'Dev.to',
+  hashnode: 'Hashnode',
+  wordpress: 'WordPress',
+  listmonk: 'Listmonk',
+  dribbble: 'Dribbble',
+  twitch: 'Twitch',
+  kick: 'Kick',
 }
 
 const platformLabel = (platform) => PLATFORM_LABELS[platform] || platform
