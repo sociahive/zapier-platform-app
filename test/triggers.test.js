@@ -21,7 +21,7 @@ describe('app definition', () => {
   })
 
   it('makes every event trigger a REST hook with a performList', () => {
-    for (const key of ['newPublishedPost', 'postFailed', 'flowTriggered', 'flowError']) {
+    for (const key of ['newPublishedPost', 'postFailed', 'postReviewDecision', 'plugFired', 'flowTriggered', 'flowError']) {
       const op = App.triggers[key].operation
       expect(op.type).toBe('hook')
       expect(typeof op.performSubscribe).toBe('function')
@@ -61,6 +61,34 @@ describe('subscribe and unsubscribe', () => {
       inputData: {},
     })
     expect(result.id).toBe('wh2')
+    scope.done()
+  })
+
+  it('subscribes Post Review Decision with no account filter, even when one is passed', async () => {
+    const fieldKeys = App.triggers.postReviewDecision.operation.inputFields.map((f) => f.key)
+    expect(fieldKeys).toEqual(['kind'])
+    const scope = nock(API)
+      .post('/webhooks', (body) => body.events[0] === 'post.review_decision' && !('account_ids' in body))
+      .reply(201, { data: { id: 'wh3' } })
+    const result = await appTester(App.triggers.postReviewDecision.operation.performSubscribe, {
+      authData,
+      targetUrl: 'https://hooks.zapier.com/x',
+      inputData: { account_id: 'acc1' },
+    })
+    expect(result.id).toBe('wh3')
+    scope.done()
+  })
+
+  it('subscribes Plug Fired to post.plug_fired limited to the chosen account', async () => {
+    const scope = nock(API)
+      .post('/webhooks', { target_url: 'https://hooks.zapier.com/x', events: ['post.plug_fired'], integration_type: 'zapier', account_ids: ['acc1'] })
+      .reply(201, { data: { id: 'wh4' } })
+    const result = await appTester(App.triggers.plugFired.operation.performSubscribe, {
+      authData,
+      targetUrl: 'https://hooks.zapier.com/x',
+      inputData: { account_id: 'acc1' },
+    })
+    expect(result.id).toBe('wh4')
     scope.done()
   })
 
@@ -135,6 +163,68 @@ describe('perform (delivered events)', () => {
       cleanedRequest: payload,
     })
     expect(other).toEqual([])
+  })
+
+  it('flattens a post.review_decision delivery and filters by decision', async () => {
+    const payload = {
+      id: 'evt_4',
+      event: 'post.review_decision',
+      timestamp: '2026-11-02T14:05:10.000Z',
+      data: { postId: 'p1', reviewLinkId: 'rl1', kind: 'approved', reviewerName: 'Maya' },
+    }
+    const records = await appTester(App.triggers.postReviewDecision.operation.perform, {
+      authData,
+      inputData: {},
+      cleanedRequest: payload,
+    })
+    expect(records).toEqual([
+      {
+        id: 'evt_4',
+        event: 'post.review_decision',
+        occurred_at: '2026-11-02T14:05:10.000Z',
+        post_id: 'p1',
+        review_link_id: 'rl1',
+        kind: 'approved',
+        reviewer_name: 'Maya',
+        comment: null,
+      },
+    ])
+    expect(Object.keys(records[0]).sort()).toEqual(Object.keys(App.triggers.postReviewDecision.operation.sample).sort())
+    const other = await appTester(App.triggers.postReviewDecision.operation.perform, {
+      authData,
+      inputData: { kind: 'changes_requested' },
+      cleanedRequest: payload,
+    })
+    expect(other).toEqual([])
+  })
+
+  it('flattens a post.plug_fired delivery', async () => {
+    const records = await appTester(App.triggers.plugFired.operation.perform, {
+      authData,
+      inputData: {},
+      cleanedRequest: {
+        id: 'evt_5',
+        event: 'post.plug_fired',
+        timestamp: '2026-11-02T16:20:00.000Z',
+        data: { plug_id: 'pl1', post_id: 'p1', account_id: 'acc1', platform: 'instagram', metric: 'likes', threshold: 100, value: 104, action: 'comment' },
+      },
+    })
+    expect(records).toEqual([
+      {
+        id: 'evt_5',
+        event: 'post.plug_fired',
+        occurred_at: '2026-11-02T16:20:00.000Z',
+        plug_id: 'pl1',
+        post_id: 'p1',
+        account_id: 'acc1',
+        platform: 'instagram',
+        metric: 'likes',
+        threshold: 100,
+        value: 104,
+        action: 'comment',
+      },
+    ])
+    expect(Object.keys(records[0]).sort()).toEqual(Object.keys(App.triggers.plugFired.operation.sample).sort())
   })
 
   it('returns the same keys from performList as from perform', async () => {

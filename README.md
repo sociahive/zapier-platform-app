@@ -29,6 +29,8 @@ Status: not listed in the Zapier app directory yet.
 |---|---|---|
 | Trigger (instant) | Post Published | Starts the Zap when a scheduled post is published to one of your accounts. Optionally limited to one account. |
 | Trigger (instant) | Post Failed | Starts the Zap when a scheduled post fails to publish to one of your accounts. Optionally limited to one account. |
+| Trigger (instant) | Post Review Decision | Starts the Zap when a client approves a post, asks for changes or comments on a review link. Optionally limited to one kind of decision. Needs a Studio plan or above. |
+| Trigger (instant) | Plug Fired | Starts the Zap when a plug on a post reaches its like, comment, repost or view threshold and reposts or comments. Optionally limited to one account. Needs a Creator plan or above. |
 | Trigger (instant) | Automation Started | Starts the Zap when one of your automations starts for someone, for example after a keyword comment or DM. Optionally limited to one account or automation. |
 | Trigger (instant) | Automation Error | Starts the Zap when one of your automations hits an error. Optionally limited to one account or automation. |
 | Action | Create Post | Publishes, schedules, or saves a draft post on one connected account, with text and optional image or video links. |

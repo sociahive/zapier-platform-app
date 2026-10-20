@@ -31,6 +31,8 @@ const makeHookTrigger = ({
   outputFields,
   extraInputFields = [],
   accept = () => true,
+  // false for events that do not name an account: SociaHive always sends those.
+  accountFilter = true,
 }) => {
   const performSubscribe = async (z, bundle) => {
     const body = {
@@ -38,7 +40,7 @@ const makeHookTrigger = ({
       events: [event],
       integration_type: 'zapier',
     }
-    if (bundle.inputData.account_id) body.account_ids = [bundle.inputData.account_id]
+    if (accountFilter && bundle.inputData.account_id) body.account_ids = [bundle.inputData.account_id]
     const response = await z.request({ url: `${API_BASE}/webhooks`, method: 'POST', body })
     const created = response.data && response.data.data
     // Keep only the id: the signing secret is not needed to receive events.
@@ -72,7 +74,7 @@ const makeHookTrigger = ({
     display: { label, description },
     operation: {
       type: 'hook',
-      inputFields: [accountFilterField, ...extraInputFields],
+      inputFields: [...(accountFilter ? [accountFilterField] : []), ...extraInputFields],
       performSubscribe,
       performUnsubscribe,
       perform,
